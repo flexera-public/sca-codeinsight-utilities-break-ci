@@ -65,14 +65,18 @@ def main():
         projectID = get_project_id(baseURL, projectName, authorizationToken)
 
         logger.debug("Project %s  - ProjectID %s" %(projectName, projectID))
+
+        inventorySummary = get_project_inventory_summary(baseURL, projectID, authorizationToken)
+
+        print(len(inventorySummary))
        
 
 #---------------------------------------------------------------------
 def get_project_id(baseURL, projectName, authorizationToken):
     logger.info("Entering get_project_id")
 
-    RESTAPI_URL = baseURL + "/codeinsight/api"
-    RESTAPI_URL += "/project/id?projectName=" + projectName
+    RESTAPI_BASEURL = baseURL + "/codeinsight/api"
+    RESTAPI_URL = RESTAPI_BASEURL +  "/project/id?projectName=" + projectName
     
     headers = {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authorizationToken} 
 
@@ -89,6 +93,49 @@ def get_project_id(baseURL, projectName, authorizationToken):
         logger.error("Response code %s - %s" %(response.status_code, response.text))
         return {"error" : response.text}
 
+#---------------------------------------------------------------------
+def get_project_inventory_summary(baseURL, projectID, authorizationToken):
+    logger.info("Entering get_project_inventory")
+
+    APIOPTIONS = "&vulnerabilitySummary=false"
+    RESTAPI_BASEURL = baseURL + "/codeinsight/api"
+    ENDPOINT_URL = RESTAPI_BASEURL + "/projects/" + str(projectID) + "/inventorySummary/?offset=" 
+    RESTAPI_URL = ENDPOINT_URL + "1" + APIOPTIONS
+    
+    headers = {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authorizationToken} 
+
+    #-------------------------   
+    try:
+        response = requests.get(RESTAPI_URL, headers=headers)
+    except requests.exceptions.RequestException as error:  # Just catch all errors
+        logger.error(error)
+        return {"error" : error}
+    
+    if response.status_code == 200:
+        projectInventorySummary = response.json()["data"]
+
+        # If there are no inventory items just return
+        if not projectInventorySummary:
+            return projectInventorySummary
+
+        currentPage = response.headers["Current-page"]
+        numPages = response.headers["Number-of-pages"]
+        nextPage = int(currentPage) + 1
+
+        while int(nextPage) <= int(numPages):
+            RESTAPI_URL = ENDPOINT_URL + str(nextPage) + APIOPTIONS
+            logger.debug("    RESTAPI_URL: %s" %RESTAPI_URL)
+            response = requests.get(RESTAPI_URL, headers=headers)
+
+            nextPage = int(response.headers["Current-page"]) + 1
+            projectInventorySummary += response.json()["data"]
+
+        return projectInventorySummary
+
+
+    else:
+        logger.error("Response code %s - %s" %(response.status_code, response.text))
+        return {"error" : response.text}
 
 
 #---------------------------------------
