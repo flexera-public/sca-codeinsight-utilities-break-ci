@@ -61,14 +61,49 @@ def main():
         logger.debug("Project Name:  %s" %projectName)
         logger.debug("Authorization Token:  XXXXXXX")
 
-        # Get the project ID from the supplied name
-        projectID = get_project_id(baseURL, projectName, authorizationToken)
+    # Get the project ID from the supplied name
+    projectID = get_project_id(baseURL, projectName, authorizationToken)
 
-        logger.debug("Project %s  - ProjectID %s" %(projectName, projectID))
+    logger.debug("Project %s  - ProjectID %s" %(projectName, projectID))
 
-        inventorySummary = get_project_inventory_summary(baseURL, projectID, authorizationToken)
+    inventorySummary = get_project_inventory_summary(baseURL, projectID, authorizationToken)
 
-        print(len(inventorySummary))
+    # Now that we have the inventory summary we can cycle through each item
+    # and track rejected items
+    rejectedInventoryItems = []
+
+    for inventoryItem in inventorySummary:
+        componentName = inventoryItem["name"]
+
+        print("    Processing Inventory Item: %s" %componentName)
+        logger.debug("Processing Inventory Item: %s" %componentName)
+        
+        # See what the review status is for the item
+        inventoryReviewStatus = inventoryItem["reviewStatus"]
+        
+        if inventoryReviewStatus == "Rejected":              
+            rejectedInventoryItems.append(componentName) 
+
+    # See if any components were rejected or not
+    if len(rejectedInventoryItems):
+        # There was at least one so now cycle through the failed 
+        print("")
+        print("   Failing build due to scan agent scan results")
+        print("")
+        for rejectedInventoryItem in rejectedInventoryItems:
+            print("   The component %s was rejected due to policy" %(rejectedInventoryItem))
+        print("")
+        sys.exit(-1)  # This return value is used to break the build
+    else:
+        print("")
+        print("   No items rejected due to policy")
+        print("")
+        sys.exit(0)  
+
+
+
+        
+        
        
 
 #---------------------------------------------------------------------
