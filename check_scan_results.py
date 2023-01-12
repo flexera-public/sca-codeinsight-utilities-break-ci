@@ -41,7 +41,7 @@ def main():
         print("     2 - Code Insight Project Name")
         print("     3 - Code Insight Authorization Token")
         print("")
-        sys.exit(0)
+        sys.exit(-1)
 
     else:
         # Is the first argument an URL?
@@ -52,7 +52,7 @@ def main():
             print("")
             print("First argument expected to be Code Insight URL - http(s)://address:port")
             print("")
-            sys.exit(0)
+            sys.exit(-1)
         
         projectName = (sys.argv[2])
         authorizationToken = (sys.argv[3])
@@ -91,7 +91,7 @@ def main():
         print("   Failing build due to scan agent scan results")
         print("")
         for rejectedInventoryItem in rejectedInventoryItems:
-            print("   The component %s was rejected due to policy" %(rejectedInventoryItem))
+            print("   The component %s was rejected due to policy." %(rejectedInventoryItem))
         print("")
         sys.exit(-1)  # This return value is used to break the build
     else:
